@@ -104,7 +104,6 @@ def main():
     DF = import_zhk_list()
     DF = import_flats_data(DF)
     DF = import_flats_param(DF)
-    print(DF)
     print('Done!')
 
 if __name__ == '__main__':
