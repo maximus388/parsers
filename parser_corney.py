@@ -25,7 +25,6 @@ import progressbar
 
 
 chrome_options = Options()
-# chrome_options.add_experimental_option("detach", True)             # Оставлять браузер открытым
 
 URL = 'https://kornei.ru/kvartiry/'
 ACTUAL_DATE = datetime.datetime.now().strftime('%Y-%m-%d')
@@ -37,18 +36,20 @@ def import_data(URL):
     caps["pageLoadStrategy"] = "none"
     browser = webdriver.Chrome(service = Service(ChromeDriverManager().install()), desired_capabilities = caps)
     browser.get(URL)
+    
     time.sleep(7)
     flats_overall_num = int(browser.find_element(By.XPATH, "//span[@class='parametric-results__label']").text)
     extend = browser.find_element(By.XPATH, "//button[@class='button button_theme_content-width button_theme_light button_theme_stroke']")
     for i in range(flats_overall_num // 6):
         try:
-#             time.sleep(time_to_extend)                   # из-за этого браузер закрывается раньше нужного
             browser.execute_script("arguments[0].click();", extend)
         except:
             pass
+            
     print('Получение данных...')
     links = [link.get_attribute("href") for link in browser.find_elements(By.XPATH, "//*[@href]")]
     links = [i for i in links if 'https://kornei.ru/kvartiry/flat/' in i]
+    
     if flats_overall_num == len(links): # потом поставить "равно"
         df = []
         with progressbar.ProgressBar(max_value = len(links)) as bar:
@@ -75,24 +76,12 @@ def import_data(URL):
                                          'Четырехкомнатная квартира': 4,
                                          'Пятикомнатная квартира': 5}, regex = True)
         df = df.rename(columns={"name": "rooms_cnt"})
+        
     return df
-
-def export_to_google(df):
-    print('Экспорт данных в гугл-таблицу...')
-    try:
-        gc = pygsheets.authorize(service_file='Z:\\Аналитический отдел\\Python обучение\\test service account.json')
-    except FileNotFoundError:
-        gc = pygsheets.authorize(service_file='C:\\Users\\ws-tmn-an-15\\Desktop\\Харайкин М.А\\Python документы\\python-automation-script-jupyter-notebook-266007-21fda3e2971a.json')
-    sh = gc.open_by_key('1MEekXLn0Snza2P7TnLf8G4YsSVB9o4fxhkDB-CVD-bQ') # https://docs.google.com/spreadsheets/d/1MEekXLn0Snza2P7TnLf8G4YsSVB9o4fxhkDB-CVD-bQ/edit#gid=158442293
-    wks = sh.worksheet_by_title('Выгрузка - Корней')
-    wks.clear(start = '', end = '')
-    wks.set_dataframe(df, 'a1', extend = True, nan = '')
 
     
 def main():
     df = import_data(URL)
-    df[f'Дата обновления: {ACTUAL_DATE}\nОбновлено: Харайкин М.А.'] = ''
-    export_to_google(df)
     
 if __name__ == '__main__':
     main()
